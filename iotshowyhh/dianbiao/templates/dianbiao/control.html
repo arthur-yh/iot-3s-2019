@@ -1,0 +1,336 @@
+<!DOCTYPE HTML>
+<html>
+   <head>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js"></script>
+
+    <style>
+        body{
+            background-color: #f3f3f3
+        }
+    </style>
+   
+   <meta charset="utf-8">
+   <title>控制端</title>
+    
+      <script type="text/javascript">
+	  
+	  var wsflag=0;
+	  
+	  var backmsg,backmsg_json;
+	  var ws;
+	  var msg;
+	  var msg1 = '{ "ver": "33", "openid": "83762687e6694006f6d1161864164d0a", "userid": "1020407197", "psw": "05a671c66aefea124cc08b76ea6d30bb", "id": "2648",  "comstring": "'
+	  var commsg;
+	  var msg2='", "timer": "';
+	  var msg3='"  }';
+	  var timer;
+	  var todos;
+	  var liveid;
+	  
+	  //产生时间戳
+	  function timest() 
+	  {
+		  var tmp = Date.parse( new Date() ).toString();
+		  tmp = tmp.substr(0,10);
+		  return tmp;
+      }
+	  
+	 
+	  
+	  //清空接收区
+	  function clear_backmsg()
+	  {
+		  backmsg=""; 
+		  backmsg_json="";
+		  document.getElementById("recmsg").innerHTML=backmsg;//原始区域
+		  document.getElementById("recmsg-json").innerHTML=backmsg_json;//解析区域
+		  
+	  }
+	  
+	  //发送按钮
+	  function send_com(comstr)
+	  {  
+	      if (wsflag==1)
+            {
+              timer=timest();
+			  
+			   msg=msg1+comstr+msg2+timer+msg3;
+			   
+		  	   ws.send(msg);  
+		  		backmsg+="已经发送:"+comstr+"<br>"; 
+		  		document.getElementById("recmsg").innerHTML=backmsg;
+				
+				backmsg_json+="已经发送:"+comstr; 
+		  		document.getElementById("recmsg-json").innerHTML=backmsg_json;
+				
+			}
+			  else
+            {
+               // 浏览器不支持 WebSocket
+               alert("您的浏览器不支持 WebSocket!");
+            }
+		
+		  
+	  }
+	  
+	  //发送输入框
+	  function send_msg()
+	  {  
+	      if (wsflag==1)
+            {
+               timer=timest();
+		  	   commsg=document.getElementById("comstr").value;
+			   
+			   msg=msg1+commsg+msg2+timer+msg3;
+			   
+		  	   ws.send(msg);  
+		  		backmsg+="已经发送:"+commsg+"<br>"; 
+		  		document.getElementById("recmsg").innerHTML=backmsg;
+				
+				backmsg_json+="已经发送:"+commsg+"<br>"; 
+		  		document.getElementById("recmsg-json").innerHTML=backmsg_json;
+				
+			}
+			  else
+            {
+               // 浏览器不支持 WebSocket
+               alert("您的浏览器不支持 WebSocket!");
+            }
+		
+		  
+	  }
+	  
+	  
+	  
+	  
+	  
+         function WebSocketTest()
+         {
+            if ("WebSocket" in window)
+            {
+               //alert("您的浏览器支持 WebSocket!");
+			   wsflag=1;//支持
+               
+               // 打开一个 web socket
+               ws = new WebSocket("ws://apps.fuhome.net:7002");
+			
+                
+	
+               ws.onopen = function()
+               {
+                  // Web Socket 已连接上，使用 send() 方法发送数据
+				   //第一次连接询问一次,可用于查询设备运行的状态，以刷新图标等用途
+				   timer=timest();
+				   msg=msg1+"ZT"+msg2+timer+msg3;
+				   
+                   ws.send(msg);
+				   
+				    backmsg+="连接成功,询问:"+"ZT"+"<br>"; 
+		  			document.getElementById("recmsg").innerHTML=backmsg;
+					
+					backmsg_json+="连接成功,询问:"+"ZT"+"<br>";  
+		  			document.getElementById("recmsg-json").innerHTML=backmsg_json;
+				   
+                    //alert("数据发送中...");
+					 //定时心跳询问ZT 30S，保持websocket
+	                todos=setInterval(function(){send_com("ZT")}, 30000);
+					
+					
+               };
+                
+               ws.onmessage = function (evt) 
+               { 
+			      
+                  var received_msg = evt.data;
+				  backmsg+='<font style="color:#F90;">设备回复:</font><br>';
+				  backmsg+=received_msg;
+				  backmsg+="<br>";
+				  document.getElementById("recmsg").innerHTML=backmsg;
+				  
+				  var disid=document.getElementById("dispic");
+				  var ctrlid=document.getElementById("ctrlpic");
+				  liveid=document.getElementById("livetimes");
+				  
+				  //解析json
+				   var strJSON = received_msg;//得到的JSON 字符串
+    				var obj = new Function("return" + strJSON)();//转换后的JSON对象  
+                 
+				  
+				  
+				  backmsg_json+='<font style="color:#F90;"><br>时间:';
+				  backmsg_json+=obj.time;//时间
+				  backmsg_json +="</font><br>";
+				  
+				  backmsg_json+="设备回复:类型:";
+				  backmsg_json+=obj.type;//类型
+				  backmsg_json+=" 名称:";
+				  backmsg_json+=obj.devname;//名称
+				  backmsg_json+=" id:";
+				  backmsg_json+=obj.id;//id
+				  
+				  liveid.innerHTML="活动时间:"+obj.time;
+				  
+				   //心跳时间
+				  if(obj.type=="heart")
+				  {
+					  liveid.innerHTML="活动时间:"+obj.time;
+					  
+				  }
+				  
+				  //返回或者报警
+				  else if(obj.type=="back"||obj.type=="alarm")
+				  {
+					  backmsg_json+=" 内容:";
+					  backmsg_json+=obj.contents;//内容
+					  
+					  //显示最新图标
+					  if(obj.contents=="off")
+					  {
+						  disid.innerHTML='<img src="pic/dis/d100011.jpg" height="200">';
+						  ctrlid.innerHTML='<a href=\'javascript:send_com("open")\'><img src="pic/ctrl/c100011.jpg" width="200"></a>';
+						  
+					  }
+					  else if(obj.contents=="on")
+					  {
+						  disid.innerHTML='<img src="pic/dis/d100012.jpg" height="200">';
+						  ctrlid.innerHTML='<a href=\'javascript:send_com("close")\'><img src="pic/ctrl/c100012.jpg" width="200"></a>';
+						  
+					  }
+					  else
+					  {
+						  disid.innerHTML='<img src="pic/dis/d100010.jpg" height="200">';
+						  ctrlid.innerHTML='<img src="pic/ctrl/c100010.jpg" width="200">'; 
+						  
+					   }
+					  
+					  
+				  }
+				  else if(obj.type=="feel")
+				  {
+					   backmsg_json+=" <br>编号:";
+					   backmsg_json+=obj.feelnum;//传感器编号
+					  
+					  if(obj.feeltype=="01")
+					  {
+					     backmsg_json+=" 传感1:";
+					     backmsg_json+=obj.feelvalue1;//内容1
+					  }
+					   else if(obj.feeltype=="02")
+					  {
+						 backmsg_json+=" 传感1:";
+					     backmsg_json+=obj.feelvalue1;//内容1
+					     backmsg_json+=" 传感2:";
+					     backmsg_json+=obj.feelvalue2;//内容2
+					  }
+					  
+				  }
+				  
+				  backmsg_json +="<br>";
+				  document.getElementById("recmsg-json").innerHTML=backmsg_json;
+				  
+                  //alert("数据已接收...");
+               };
+                
+               ws.onclose = function()
+               { 
+                  // 关闭 websocket
+				   backmsg+="连接已断开<br>";
+				  document.getElementById("recmsg").innerHTML=backmsg;
+				  
+				  liveid.innerHTML="连接已断开,请刷新<br>"; 
+				  clearInterval(todos);
+                  //alert("连接已关闭..."); 
+               };
+            }
+            
+            else
+            {
+               // 浏览器不支持 WebSocket
+               alert("您的浏览器不支持 WebSocket!");
+            }
+         }
+		 
+		 
+		  window.onload = WebSocketTest;
+		 
+		 
+      </script>
+        
+   </head>
+   <body>
+	<nav class="navbar navbar-dark navbar-expand-lg" style="background-color: #27365f;">
+        <a class="navbar-brand" href="#">IBM用电监控系统</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+				<li class="nav-item">
+						<a class="nav-link" href="/dianbiao/show/">Home</a>
+				</li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">控制<span class="sr-only">(current)</span></a>
+				</li>
+				<li class="nav-item">
+                    <a class="nav-link" href="/dianbiao/alarm/">警报与改进</a>
+                </li>
+            </ul>
+        </div>
+	</nav>
+<div class="container">
+	  <div class="row align-items-begin justify-content-center" style="margin-top: 1%">
+		<div class="col-5">
+				<div class="input-group mb-3">
+						<div class="input-group-prepend">
+						  <span class="input-group-text">命令：</span>
+						</div>
+						<input id="comstr" type="text" class="form-control" aria-label="Default" aria-describedby="inputGroup-sizing-default">
+					  </div>
+			</div>
+			<div class="col-2 col-sm-2 col-md-2 col-lg-1 col-xl-1">
+			  <button type="button" class="btn btn-primary btn-block" onclick="send_msg()">发送</button>
+			</div>
+		</div>
+	  <div class="row align-items-center justify-content-center" style="margin-top: 1%" id="sse">
+		<div class="col-2 col-sm-2 col-md-2 col-lg-1 col-xl-1">
+		 <button type="button" class="btn btn-success btn-block" onclick='send_com("open")'>打开</button>
+		</div>
+		<div class="col-2 col-sm-2 col-md-2 col-lg-1 col-xl-1">
+		 <button type="button" class="btn btn-danger btn-block" onclick='send_com("close")'>关闭</button>
+		</div>
+	  </div>
+	  <div class="row align-items-center justify-content-center" style="margin-top: 1%">
+		  <div id="livetimes">设备不在线</div>
+		</div>
+	  <div class="row align-items-center justify-content-center" style="margin-top: 1%">
+		 <button type="button" class="btn btn-primary" onclick="clear_backmsg()">清空接收</button>
+		</div>
+      </div>
+      <div class="row">
+		<div class="col-6">
+		<div class="row align-items-center justify-content-center">
+			<div class="alert alert-success" role="alert">原始接收区域</div>
+		</div>
+		<div class="row align-items-center justify-content-center">
+			
+			<div id="recmsg" style="border: 1px solid #E1E1E1; margin-left:5vw"></div>
+		</div>
+	</div>
+	<div class="col-6">
+		<div class="row align-items-center justify-content-center">
+			<div class="alert alert-warning" role="alert">解析接收区域</div>
+		</div>
+	  <div id="recmsg-json" style="border: 1px solid #E1E1E1; margin-right:5vw"></div>
+	</div>
+      </div>
+	  </div>
+</div>
+       
+      
+   </body>
+</html>

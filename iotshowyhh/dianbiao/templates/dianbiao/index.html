@@ -1,0 +1,551 @@
+<!-- <!DOCTYPE html> -->
+<html lang="zh-cmn">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-compatible" content="ie=edge">
+    <title>test</title>
+    <!--Bootstrap-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+    <script src="../../static/dianbiao/js/jquery-3.4.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js"></script>
+
+    <style>
+        body{
+            background-color: #f3f3f3
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark navbar-expand-lg" style="background-color: #27365f;">
+        <a class="navbar-brand" href="#">IBM用电监控系统</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="/dianbiao/show/">Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dianbiao/control/">控制<span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dianbiao/alarm/">警报与改进</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <!-- Grid System -->
+    <div class="container" id='wholepage'>
+        <div class="row align-items-begin" style="margin-top:2%;background-color: #ffffff;border-style: solid; border-width:1px">
+            <div class="col-lg-5 col-6">
+                <div class="row" style="height:1vh"></div>
+                <div class="row align-items-end">
+                    <div class="col-lg-7 col-xl-8 col-12">
+                        <h3 style="font-size: 1.8vw">生产线信息</h3>
+                    </div>
+                    <div class="col-lg-5 col-xl-4 d-none d-lg-block">
+                        <small id="current_date_shenchan" style="font-size: 0.8vw">{{ show_time }}</small>
+                    </div>
+                </div>
+                <div class="row align-items-end" style="margin-top:1%">
+                    <div class="col-12">
+                        <p style="font-size: 1vw">
+                            <strong>生产线位置</strong>&nbsp&nbsp{{shengchan_name}}<br>
+                            <strong>生产线类别</strong>&nbsp&nbsp{{shengchan_type}}<br>
+                            <strong>运转状态</strong>&nbsp&nbsp&nbsp&nbsp&nbsp<font color={{yunzhuan_color}}>{{yunzhuan}}</font><br>
+                            <strong>加工工艺</strong>&nbsp&nbsp&nbsp&nbsp&nbsp{{jiagonggongyi}}<br>
+                            <strong>监测点</strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{{jiancedian}}
+                        </p>
+                    </div>
+                </div>
+                <div class="row align-items-end">
+                    <div class="col-6">
+                        <p>
+                            <strong style="font-size: 1vw">{{date_input.month}}月累计用电(kwh)</strong><br>
+                            &nbsp&nbsp&nbsp<small id="refresh_current_month_ele" style="font-size: 0.9vw">{{current_month_ele_all}}</small><br>
+                            &nbsp&nbsp&nbsp<small style="font-size: 0.9vw"><a>环比上月：</a><a id="refresh_huanbi_1" color={{huanbi_color_text}}>{{huanbi_text}}</a></small>
+                        </p>
+                    </div>
+                    <div class="col-6">
+                        <p>
+                            <strong style="font-size: 1vw">{{date_input.month}}月计划用电(kwh)</strong><br>
+                            &nbsp&nbsp&nbsp<small style="font-size: 0.9vw">120000</small><br>
+                            &nbsp&nbsp&nbsp<small style="font-size: 0.9vw"><font color="#4dcbb5">未超标</font></small>
+                        </p>
+                    </div>
+                </div>
+                <div class="row align-items-end" style="margin-top:1%">
+                    <div class="col-6">
+                        <p>
+                            <strong style="font-size: 1vw">{{date_input.month}}月累计电费(元)</strong><br>
+                            &nbsp&nbsp&nbsp<small id="refresh_current_month_ele_fees" style="font-size: 0.9vw">{{current_month_ele_fees}}</small><br>
+                            &nbsp&nbsp&nbsp<small style="font-size: 0.9vw"><a>环比上月：</a><a id="refresh_huanbi_2" color={{huanbi_color_text}}>{{huanbi_text}}</a></small>
+                        </p>
+                    </div>
+                    <div class="col-6">
+                        <p>
+                            <strong style="font-size: 1vw">{{date_input.month}}月计划电费(元)</strong><br>
+                            &nbsp&nbsp&nbsp<small style="font-size: 0.9vw">100000</small><br>
+                            &nbsp&nbsp&nbsp<small style="font-size: 0.9vw"><font color="#4dcbb5">未超标</font></small>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7 col-6">
+                <div class="row" style="height:1vh"></div>
+                <div class="row align-items-end">
+                    <div class="col-12 col-xl-9 col-lg-8">
+                        <h3 style="font-size: 1.8vw">负荷监测</h3>
+                    </div>
+                    <div class="col-lg-4 col-xl-3 d-none d-lg-block">
+                        <small id="current_date">{{ show_time }}</small>
+                    </div>
+                </div>
+                <div class="chart-container" style="position: relative; height:36vh">
+                    <canvas id="myChart2"></canvas>
+                </div>
+                <div class="row align-items-center justify-content-center">
+                    <div class="col-10 col-sm-10 col-md-6 col-lg-5 col-xl-3">
+                    <div class="btn-group btn-group-toggle btn-xs" data-toggle="buttons">
+                        <label class="btn btn-secondary active" id="option2">
+                          <input type="radio" name="options" autocomplete="off"> 当前
+                        </label>
+                        <label class="btn btn-secondary" id="option3">
+                          <input type="radio" name="options" autocomplete="off"> 预测
+                        </label>
+                      </div></div>
+                </div>
+                <p id="demo"></p>
+                <div class="row" style="height: 5px"></div>
+            </div>
+        </div>
+        <div class="row align-items-begin" style="margin-top:1%;background-color: #ffffff;border-style: solid; border-width:1px">
+            <div class="col-lg-5 col-xl-5 col-md-6 col-6">
+                <div class="row" style="height:1vh"></div>
+                <div class="row align-items-end">
+                    <div class="col-12 col-lg-7 col-xl-8">
+                        <h3 style="font-size: 1.8vw">电费统计</h3>
+                    </div>
+                    <div class="col-lg-5 col-xl-4 d-none d-lg-block">
+                        <small id="refresh_ele_fees_date">{{ele_fees_date}}</small>
+                    </div>
+                </div>
+                <div class="chart-container" style="position: relative; height:30vh">
+                    <canvas id="myChart3"></canvas>
+                </div>
+                <div class="row align-items-center justify-content-center">
+                    <div class="col-6 col-sm-6 col-md-4 col-lg-3 col-xl-3">
+                        <a class="btn btn-primary" href="http://www.csg.cn/" role="button">缴费</a>
+                    </div>
+                </div>
+                <div class="row" style="height: 5px"></div>
+            </div>
+            <div class="col-lg-7 col-xl-7 col-md-6 col-6">
+                <div class="row" style="height:1vh"></div>
+                <div class="row align-items-end">
+                    <div class="col-12 col-lg-8 col-xl-9">
+                        <h3 style="font-size: 1.8vw">用电监测</h3>
+                    </div>
+                    <div class="col-lg-4 col-xl-3 d-none d-lg-block">
+                        <small id="refresh_current_month_fees_date">{{current_month_fees_date}}</small>
+                    </div>
+                </div>
+                <div class="chart-container" style="position: relative; height:30vh">
+                    <canvas id="myChart4"></canvas>
+                </div>
+                <div class="row align-items-center justify-content-center">
+                    <div class="col-10 col-sm-10 col-md-6 col-lg-5 col-xl-3">
+                    <div class="btn-group btn-group-toggle btn-xs" data-toggle="buttons">
+                        <label class="btn btn-secondary" id="option4">
+                            <input type="radio" name="options" autocomplete="off"> 上月
+                        </label>
+                        <label class="btn btn-secondary active" id="option5">
+                            <input type="radio" name="options" autocomplete="off"> 当月
+                        </label>
+                        </div></div>
+                </div>
+                <div class="row" style="height: 5px"></div>
+            </div>
+        </div>
+    </div>
+
+<!--    数据-->
+    <script>$.ajaxSetup({headers: {"X-CSRFToken": '{{ csrf_token }}'}});</script>
+    <script type="text/javascript">
+
+        window.setInterval(function(){refresh()},6000);
+
+        function chart_update() {
+            // 更新前端HTML的展示时间
+            document.getElementById('current_date').innerHTML = refreshData.text_info.show_time
+            document.getElementById('current_date_shenchan').innerHTML = refreshData.text_info.show_time
+            document.getElementById('refresh_current_month_ele').innerHTML = refreshData.text_info.current_month_ele_all
+            document.getElementById('refresh_current_month_ele_fees').innerHTML = refreshData.text_info.current_month_ele_fees
+            document.getElementById('refresh_huanbi_1').innerHTML = refreshData.text_info.huanbi_text
+            document.getElementById('refresh_huanbi_2').innerHTML = refreshData.text_info.huanbi_text
+            document.getElementById('refresh_huanbi_1').style.color = refreshData.text_info.huanbi_color_text
+            document.getElementById('refresh_huanbi_2').style.color = refreshData.text_info.huanbi_color_text
+            document.getElementById('refresh_ele_fees_date').innerHTML = refreshData.text_info.ele_fees_date
+            document.getElementById('refresh_current_month_fees_date').innerHTML = refreshData.text_info.current_month_fees_date
+            // 更新表格负荷信息
+            current_label_array_refresh = new Array();
+            current_data_array_refresh = new Array();
+            current_predict_data_array_refresh = new Array();
+            for (var key in refreshData.current_data)
+            {
+                current_label_array_refresh.push([key])
+                current_data_array_refresh.push([refreshData.current_data[key]])
+                current_predict_data_array_refresh.push([refreshData.current_predict_data[key]])
+            }
+            payloadNow={
+                labels:current_label_array_refresh,
+                datasets:[{
+                    label:'实际负荷',
+                    data:current_data_array_refresh,
+                    backgroundColor:'rgba(43,83,194,0.6)',
+                    borderColor:'rgba(43,83,194,0.9)',
+                    borderWidth:2
+                },
+                {
+                    label:'预测负荷',
+                    data:current_predict_data_array_refresh,
+                    backgroundColor:'rgba(43,83,194,0)',
+                    borderColor:'rgba(244,114,98,0.9)',
+                    borderWidth:2
+                }]
+            };
+            // 更新预测下一个自然日的代码
+            var predict_label_array=new Array();
+            var predict_data_array=new Array();
+            for (var key in refreshData.predict_data)
+            {
+                predict_label_array.push([key])
+                predict_data_array.push([refreshData.predict_data[key]])
+            }
+            payloadFuture={
+                labels:predict_label_array,
+                    datasets:[{
+                        label:'预测负荷',
+                        data:predict_data_array,
+                        backgroundColor:'rgba(43,83,194,0)',
+                        borderColor:'rgba(244,114,98,0.9)',
+                        borderWidth:2
+                    }]
+            };
+            if (activeButton[0]=='now'){
+                dataChart2.data=payloadNow;
+                }
+            else{
+                dataChart2.data=payloadFuture;
+                }
+            dataChart2.update();
+            // 电费统计更新
+            var ele_fees_label_refresh_array=new Array();
+            var ele_fees_data_refresh_array=new Array();
+            for (var key in refreshData.ele_fees)
+            {
+                ele_fees_label_refresh_array.push([key])
+                ele_fees_data_refresh_array.push([refreshData.ele_fees[key]])
+            }
+            elecFee={
+                labels:ele_fees_label_refresh_array,
+                datasets:[{
+                    label:'实际电费',
+                    data:ele_fees_data_refresh_array,
+                    backgroundColor:'#3894e1'
+                },
+                {
+                    label:'计划电费',
+                    data:ele_fees_data_refresh_array,
+                    backgroundColor:'#f4724e'
+                }]
+            };
+            // 电费统计表格更新
+            dataChart3.data=elecFee;
+            dataChart3.update();
+            // 用电监测部分更新
+            var current_ele_label_refresh_array=new Array();
+            var current_ele_data_refresh_array=new Array();
+            var current_plan_data_array=new Array();
+            for (var key in refreshData.current_month_ele_dict)
+            {
+                current_ele_label_refresh_array.push([key])
+                current_ele_data_refresh_array.push([refreshData.current_month_ele_dict[key]])
+                current_plan_data_array.push([25000])
+            }
+            elecCspNow={
+                labels:current_ele_label_refresh_array,
+                datasets:[{
+                    label:'实际用电',
+                    data:current_ele_data_refresh_array,
+                    backgroundColor:'rgba(30,164,155,0.6)',
+                    borderColor:'rgba(30,164,155,0.9)',
+                    borderWidth:2
+                },
+                {
+                    label:'计划用电',
+                    data:current_plan_data_array,
+                    backgroundColor:'rgba(250,178,56,0)',
+                    borderColor:'rgba(250,178,56,0.9)',
+                    borderWidth:2
+                }]
+            };
+            // 用电监测部分表格更新
+            if (activeButton[1]=='now'){
+                dataChart4.data=elecCspNow;
+                dataChart4.update();
+                }
+        }
+        function refresh(){
+            let cdate = document.getElementById('current_date').innerHTML;
+            $.ajax({
+                type:"POST",
+                data:{'current_date':cdate},
+                url:document.URL+"refresh/",
+                cache:false,
+                dateType:"json",
+                async : true,
+                success:function (result){
+                    chart_update()
+                }
+            });
+        }
+
+
+
+    </script>
+    <script>
+        var current_data = {{ current_data|safe }};
+        var current_predict_data = {{ current_predict_data|safe }};
+        // Define the labels for current data
+        var current_label_array=new Array();
+        var current_data_array=new Array();
+        var current_predict_data_array=new Array();
+        for (var key in current_data)
+        {
+            current_label_array.push([key])
+            current_data_array.push([current_data[key]])
+            current_predict_data_array.push([current_predict_data[key]])
+        }
+        var payloadNow={
+            labels:current_label_array,
+            datasets:[{
+                label:'实际负荷',
+                data:current_data_array,
+                backgroundColor:'rgba(43,83,194,0.6)',
+                borderColor:'rgba(43,83,194,0.9)',
+                borderWidth:2
+            },
+            {
+                label:'预测负荷',
+                data:current_predict_data_array,
+                backgroundColor:'rgba(43,83,194,0)',
+                borderColor:'rgba(244,114,98,0.9)',
+                borderWidth:2
+            }]
+        };
+
+        var predict_data = {{ predict_data|safe }};
+        // Define the labels for current data
+        var predict_label_array=new Array();
+        var predict_data_array=new Array();
+        for (var key in predict_data)
+        {
+            predict_label_array.push([key])
+            predict_data_array.push([predict_data[key]])
+        }
+        var payloadFuture={
+            labels:predict_label_array,
+                datasets:[{
+                    label:'预测负荷',
+                    data:predict_data_array,
+                    backgroundColor:'rgba(43,83,194,0)',
+                    borderColor:'rgba(244,114,98,0.9)',
+                    borderWidth:2
+                }]
+        };
+
+        var current_month_ele_dict = {{ current_month_ele_dict|safe }};
+        // Define the labels for current data
+        var current_ele_label_array=new Array();
+        var current_ele_data_array=new Array();
+        var current_plan_data_array=new Array();
+        for (var key in current_month_ele_dict)
+        {
+            current_ele_label_array.push([key])
+            current_ele_data_array.push([current_month_ele_dict[key]])
+            current_plan_data_array.push([25000])
+        }
+        var elecCspNow={
+            labels:current_ele_label_array,
+            datasets:[{
+                label:'实际用电',
+                data:current_ele_data_array,
+                backgroundColor:'rgba(30,164,155,0.6)',
+                borderColor:'rgba(30,164,155,0.9)',
+                borderWidth:2
+            },
+            {
+                label:'计划用电',
+                data:current_plan_data_array,
+                backgroundColor:'rgba(250,178,56,0)',
+                borderColor:'rgba(250,178,56,0.9)',
+                borderWidth:2
+            }]
+        };
+
+        var last_month_ele_dictl = {{ last_month_ele_dictl|safe }};
+        // Define the labels for current data
+        var last_ele_label_array=new Array();
+        var last_ele_data_array=new Array();
+        var last_plan_data_array=new Array();
+        for (var key in last_month_ele_dictl)
+        {
+            last_ele_label_array.push([key])
+            last_ele_data_array.push([last_month_ele_dictl[key]])
+            last_plan_data_array.push([25000])
+        }
+        var elecCspLast={
+            labels:last_ele_label_array,
+            datasets:[{
+                label:'实际用电',
+                data:last_ele_data_array,
+                backgroundColor:'rgba(30,164,155,0.6)',
+                borderColor:'rgba(30,164,155,0.9)',
+                borderWidth:2
+            },
+            {
+                label:'计划用电',
+                data:last_plan_data_array,
+                backgroundColor:'rgba(250,178,56,0)',
+                borderColor:'rgba(250,178,56,0.9)',
+                borderWidth:2
+            }]
+        };
+
+        var ele_fees = {{ ele_fees|safe }};
+        var ele_fees_label_array=new Array();
+        var ele_fees_data_array=new Array();
+        for (var key in ele_fees)
+        {
+            ele_fees_label_array.push([key])
+            ele_fees_data_array.push([ele_fees[key]])
+        }
+        var elecFee={
+            labels:ele_fees_label_array,
+            datasets:[{
+                label:'实际电费',
+                data:ele_fees_data_array,
+                backgroundColor:'#3894e1'
+            },
+            {
+                label:'计划电费',
+                data:ele_fees_data_array,
+                backgroundColor:'#f4724e'
+            }]
+        };
+        //画图
+
+        let myChart2 = document.getElementById('myChart2').getContext('2d');
+
+        let dataChart2 = new Chart(myChart2,{
+            type:'line', //bar,horizontalbar,pie,line,donhnut,radar,polarArea
+            data:payloadNow,
+            options: {
+                maintainAspectRatio: false,
+                title: {
+                    display: false,
+                    text: '趋势'
+                },
+                elements: { point: { radius: 0 } },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                        beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        })
+
+        let myChart3 = document.getElementById('myChart3').getContext('2d');
+
+        let dataChart3 = new Chart(myChart3,{
+            type:'bar', //bar,horizontalbar,pie,line,donhnut,radar,polarArea
+            data:elecFee,
+            options: {
+                maintainAspectRatio: false,
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                        beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        })
+
+        let myChart4 = document.getElementById('myChart4').getContext('2d');
+
+        let dataChart4 = new Chart(myChart4,{
+            type:'line', //bar,horizontalbar,pie,line,donhnut,radar,polarArea
+            data:elecCspNow,
+            options: {
+                maintainAspectRatio: false,
+                title: {
+                    display: false,
+                    text: '趋势'
+                },
+                elements: {
+                    point: { radius: 0 } ,
+                    line:{tension:0}
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                        beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        })
+
+
+
+        //按钮功能
+        activeButton=['now','now']
+        document.getElementById('option3').onclick = function predictData(){
+            dataChart2.data=payloadFuture;
+            activeButton[0]='future';
+            dataChart2.update();
+        };
+        document.getElementById('option2').onclick = function currentData(){
+            dataChart2.data=payloadNow;
+            activeButton[0]='now';
+            dataChart2.update();
+        };
+        document.getElementById('option4').onclick = function cspLast(){
+            dataChart4.data=elecCspLast;
+            activeButton[1]='last';
+            dataChart4.update();
+        };
+        document.getElementById('option5').onclick = function cspLast(){
+            dataChart4.data=elecCspNow;
+            activeButton[1]='now';
+            dataChart4.update();
+        };
+    </script>
+
+
+<!--     <script src="../../static/dianbiao/js/myJs.js"></script> -->
+
+
+</body>
+
+</html>

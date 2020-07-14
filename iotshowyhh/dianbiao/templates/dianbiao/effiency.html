@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-cmn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta http-equiv="X-UA-compatible" content="ie=edge">
+    <title>效率</title>
+    <!--Bootstrap-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css" rel="stylesheet">
+    <script src="../../static/dianbiao/js/jquery-3.4.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js"></script>
+<!--plotly-->
+    <script src="../../static/dianbiao/js/plotly-latest.min.js"></script>
+    <style>
+        body{
+            background-color: #f3f3f3
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark navbar-expand-lg" style="background-color: #27365f;">
+        <a class="navbar-brand" href="#">IBM用电监控系统</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dianbiao/show/" >Home <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dianbiao/control/" >控制 <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/dianbiao/alarm/" >警报与改进</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="row align-items-start justify-content-center" style="margin-top:2%;background-color: #ffffff;border-style: solid; border-width:1px">
+            <div class="col-lg-7 col-6">
+                <div class="row" style="height:1vh"></div>
+                <div class="row align-items-end">
+                    <div class="col-lg-7 col-xl-8 col-12">
+                        <h3 style="font-size: 1.8vw">功率因数走势</h3>
+                    </div>
+                </div>
+                <div class="chart-container" style="position: relative; height:30vh">
+                    <canvas id="powerFactor"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-5 col-6">
+                <div class="row" style="height:1vh"></div>
+                <div class="row align-items-end">
+                    <div class="col-lg-7 col-xl-8 col-12">
+                        <h3 style="font-size: 1.8vw">生产线信息</h3>
+                    </div>
+                    <div class="col-lg-5 col-xl-4 d-none d-lg-block">
+                        <small style="font-size: 0.8vw" id="current_date_shenchan">{{ show_time }}</small>
+                    </div>
+                </div>
+                <div class="row align-items-end" style="margin-top:1%">
+                    <div class="col-12">
+                        <p style="font-size: 1vw">
+                            <strong>生产线位置</strong>&nbsp&nbsp{{shengchan_name}}<br>
+                            <strong>生产线类别</strong>&nbsp&nbsp{{shengchan_type}}<br>
+                            <strong>运转状态</strong>&nbsp&nbsp&nbsp&nbsp&nbsp<font color="#4dcbb5">{{yunzhuan}}</font><br>
+                            <strong>加工工艺</strong>&nbsp&nbsp&nbsp&nbsp&nbsp{{jiagonggongyi}}<br>
+                            <strong>监测点</strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp{{jiancedian}}
+                        </p>
+                    </div>
+                </div>
+                <div class="row align-items-end" style="margin-top:1%">
+                    <div class="col-12">
+                        <p style="font-size: 1vw">
+                            <strong>当前功率因数：</strong><a id="refresh_factor" style="display:inline" color={{ factor_color }}>{{ current_factor }}</a><br>
+                            <strong>功率因数状态：</strong><a id="refresh_factor_alarm" style="display:inline" color={{ factor_color }}>{{ factor_alarm }}</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 下一行 -->
+        <div class="row align-items-start justify-content-center" style="margin-top:2%;background-color: #ffffff;border-style: solid; border-width:1px">
+                <div class="col-lg-7 col-6">
+                    <div class="row" style="height:1vh"></div>
+                    <div class="row align-items-end">
+                        <div class="col-lg-7 col-xl-8 col-12">
+                            <h3 style="font-size: 1.8vw">有功功率走势</h3>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="position: center; height:50vh" id="power">
+                    </div>
+                </div>
+                <div class="col-lg-5 col-6">
+                    <div class="row" style="height:1vh"></div>
+                    <div class="row align-items-end">
+                        <div class="col-lg-7 col-xl-8 col-12">
+                            <h3 style="font-size: 1.8vw">功率信息</h3>
+                        </div>
+                        <div class="col-lg-5 col-xl-4 d-none d-lg-block">
+                            <small style="font-size: 0.8vw" id="current_date">{{ show_time }}</small>
+                        </div>
+                    </div>
+                    <div class="row align-items-end" style="margin-top:1%">
+                        <div class="col-12">
+                            <p style="font-size: 1vw">
+                                <strong>当前：</strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a id="refresh_active_power">{{current_active_power}}</a><br>
+                                <strong>过去30天：</strong><a id="refresh_max_30_active" style="display:inline">{{max_last14_active_power}}</a><br>
+                                <strong></strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a id="refresh_min_30_active" style="display:inline">{{min_last14_active_power}}</a><br>
+                                <strong></strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a id="refresh_mean_30_active" style="display:inline">{{mean_last14_active_power}}</a><br>
+                                <strong></strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a id="refresh_median_30_active" style="display:inline">{{median_last14_active_power}}</a><br>
+                                <strong>变化：</strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a id="refresh_bianhua_active" style="display:inline" color={{bianhua_active_power_color}}>{{bianhua_active_power}}</a><br>
+                                <strong>状态：</strong>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<a id="refresh_active_alarm" style="display:inline" color={{bianhua_active_power_color}}>{{active_alarm}}</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+    <script>$.ajaxSetup({headers: {"X-CSRFToken": '{{ csrf_token }}'}});</script>
+    <script type="text/javascript">
+
+        window.setInterval(function(){refresh()},6000);
+
+        function chart_update() {
+            // 更新前端HTML的展示时间
+            document.getElementById('current_date').innerHTML = refresh_alarm.text_info_alarm.show_time;
+            document.getElementById('current_date_shenchan').innerHTML = refresh_alarm.text_info_alarm.show_time;
+            document.getElementById('refresh_factor').innerHTML = refresh_alarm.text_info_alarm.current_factor;
+            document.getElementById('refresh_factor_alarm').innerHTML = refresh_alarm.text_info_alarm.factor_alarm;
+            document.getElementById('refresh_active_power').innerHTML = refresh_alarm.text_info_alarm.current_active_power;
+            document.getElementById('refresh_max_30_active').innerHTML = refresh_alarm.text_info_alarm.max_last14_active_power;
+            document.getElementById('refresh_min_30_active').innerHTML = refresh_alarm.text_info_alarm.min_last14_active_power;
+            document.getElementById('refresh_mean_30_active').innerHTML = refresh_alarm.text_info_alarm.mean_last14_active_power;
+            document.getElementById('refresh_median_30_active').innerHTML = refresh_alarm.text_info_alarm.median_last14_active_power;
+            document.getElementById('refresh_bianhua_active').innerHTML = refresh_alarm.text_info_alarm.bianhua_active_power;
+            document.getElementById('refresh_active_alarm').innerHTML = refresh_alarm.text_info_alarm.active_alarm;
+            document.getElementById('refresh_factor').style.color = refresh_alarm.text_info_alarm.factor_color;
+            document.getElementById('refresh_factor_alarm').style.color = refresh_alarm.text_info_alarm.factor_color;
+            document.getElementById('refresh_bianhua_active').style.color = refresh_alarm.text_info_alarm.bianhua_active_power_color;
+            document.getElementById('refresh_active_alarm').style.color = refresh_alarm.text_info_alarm.bianhua_active_power_color;
+
+            var current_label_refresh_array=new Array();
+            var current_data_refresh_array=new Array();
+            for (var key in refresh_alarm.current_factor_data)
+            {
+                current_label_refresh_array.push([key]);
+                current_data_refresh_array.push([refresh_alarm.current_factor_data[key]]);
+            }
+            powerFactorData={
+                labels:current_label_refresh_array,
+                datasets:[{
+                    label:'功率因数',
+                    data:current_data_refresh_array,
+                    backgroundColor:'rgba(43,83,194,0.6)',
+                    borderColor:'rgba(43,83,194,0.9)',
+                    borderWidth:2
+                }]
+            };
+            // 更新有功功率那一部分的图数据
+            var active_label_refresh_array=new Array();
+            var active_data_refresh_array=new Array();
+            for (var key in refresh_alarm.real_active_power)
+            {
+                active_label_refresh_array.push([key])
+                active_data_refresh_array.push([refresh_alarm.real_active_power[key]])
+            }
+            one = refresh_alarm.last30_days_active_power_one
+            two = refresh_alarm.last30_days_active_power_two
+            thr = refresh_alarm.last30_days_active_power_three
+            fou = refresh_alarm.last30_days_active_power_four
+            var powerData=[
+                day1={
+                        y:one,
+                        x:[-3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3],
+                        type:'box',
+                        name:'45分钟前'
+                     },
+                day2={
+                        y:two,
+                        x:[-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2],
+                        type:'box',
+                        name:'30分钟前'
+                     },
+                day3={
+                        y:thr,
+                        x:[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                        type:'box',
+                        name:'15分钟前'
+                     },
+                day4={
+                        y:fou,
+                        x:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                        type:'box',
+                        name:'当前'
+                     },
+                line_data={
+                    x:[-3,-2,-1,0],
+                    y:[refresh_alarm.text_info_alarm.data0,refresh_alarm.text_info_alarm.data1,
+                       refresh_alarm.text_info_alarm.data2,refresh_alarm.text_info_alarm.data3],
+                    name:'实时功率数据',
+                    type:'line'
+                }
+            ];
+            PlotlySettings={
+                autosize:true,
+                automargin:true,
+                showlegend:true
+            };
+
+             Plotly.newPlot('power', powerData, PlotlySettings, {showSendToCloud: true});
+            // 更新表格负荷信息
+            newpf.data=powerFactorData;
+            newpf.update();
+        }
+        function refresh(){
+            let cdate = document.getElementById('current_date').innerHTML;
+            $.ajax({
+                type:"POST",
+                data:{'current_date':cdate},
+                url:document.URL+"refresh_alarm/",
+                cache:false,
+                dateType:"json",
+                async : true,
+                success:function (result){
+                    chart_update()
+                }
+            });
+        }
+
+
+
+    </script>
+
+    <script>
+        var current_factor_data = {{ current_factor_data|safe }}
+        var current_label_array=new Array();
+        var current_data_array=new Array();
+        for (var key in current_factor_data)
+        {
+            current_label_array.push([key])
+            current_data_array.push([current_factor_data[key]])
+        }
+        var powerFactorData={
+            labels:current_label_array,
+            datasets:[{
+                label:'功率因数',
+                data:current_data_array,
+                backgroundColor:'rgba(43,83,194,0.6)',
+                borderColor:'rgba(43,83,194,0.9)',
+                borderWidth:2
+            }]
+        };
+
+        var real_active_power = {{ real_active_power|safe }};
+        var active_label_array=new Array();
+        var active_data_array=new Array();
+        for (var key in real_active_power)
+        {
+            active_label_array.push([key])
+            active_data_array.push([real_active_power[key]])
+        }
+        var one = {{ last30_days_active_power_one|safe}};
+        var two = {{ last30_days_active_power_two|safe}};
+        var thr = {{ last30_days_active_power_three|safe}};
+        var fou = {{ last30_days_active_power_four|safe}};
+        var powerData=[
+                        day1={
+                                y:one,
+                                x:[-3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3],
+                                type:'box',
+                                name:'45分钟前'
+                             },
+                        day2={
+                                y:two,
+                                x:[-2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2, -2],
+                                type:'box',
+                                name:'30分钟前'
+                             },
+                        day3={
+                                y:thr,
+                                x:[-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+                                type:'box',
+                                name:'15分钟前'
+                             },
+                        day4={
+                                y:fou,
+                                x:[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                type:'box',
+                                name:'当前'
+                             },
+                        line_data={
+                            x:[-3,-2,-1,0],
+                            y:[active_data_array[0],active_data_array[1],
+                               active_data_array[2],active_data_array[3]],
+                            name:'实时功率数据',
+                            type:'line'
+                        }
+                      ];
+
+        let pf = document.getElementById('powerFactor').getContext('2d');
+
+        let newpf = new Chart(pf,{
+            type:'line',
+            data:powerFactorData,
+            options: {
+                maintainAspectRatio: false,
+                title: {
+                    display: false,
+                    text: '趋势'
+                },
+                elements: { point: { radius: 0 } },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                        beginAtZero:true
+                        }
+                    }]
+                }
+            }
+        });
+
+        PlotlySettings={
+        autosize:true,
+        automargin:true,
+        showlegend:true};
+
+        Plotly.newPlot('power', powerData, PlotlySettings, {showSendToCloud: true});
+
+
+    </script>
+</body>
